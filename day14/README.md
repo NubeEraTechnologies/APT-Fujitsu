@@ -315,21 +315,3 @@ Write:
 * User/role details
 
 ---
-
-# **17. Snapshot the VM**
-
-### VirtualBox
-
-Machine → Take Snapshot → `day14_baseline`
-
-### VMware
-
-Snapshot → Take Snapshot
-
-### Cloud
-
-Create an image/AMI.
-
-✔ This ensures Day 15 can continue cleanly.
-
-If you want, I can now generate the **Day 15 README.md** or guide you step-by-step for the next lab.
