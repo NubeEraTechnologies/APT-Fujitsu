@@ -1,4 +1,3 @@
----
 
 # **Day 14 – Nexus Repository Manager (Hosted Repository Setup)**
 
