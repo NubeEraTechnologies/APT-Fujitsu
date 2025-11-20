@@ -22,7 +22,7 @@ sudo chown -R $(whoami):$(whoami) /opt/nexus /opt/sonatype-work
 ```bash
 cd /opt/nexus
 wget https://download.sonatype.com/nexus/3/latest-unix.tar.gz
-tar -xvf latest-unix.tar.gz
+tar -xvf nexus-3.86.2-01-linux-x86_64.tar.gz
 mv nexus-3* nexus
 ```
 
