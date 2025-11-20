@@ -108,7 +108,7 @@ http://4.206.201.229:8081
 # **7. Retrieve Initial Admin Password**
 
 ```bash
-sudo cat /opt/sonatype-work/nexus3/admin.password
+sudo cat /opt/nexus/sonatype-work/nexus3/admin.password
 ```
 
 Use this to log in.
