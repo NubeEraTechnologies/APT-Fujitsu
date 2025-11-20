@@ -181,6 +181,7 @@ mvn archetype:generate \
   -DartifactId=nexus-sample \
   -DarchetypeArtifactId=maven-archetype-quickstart \
   -DinteractiveMode=false
+
 mkdir nexus-sample
 cd nexus-sample
 ```
