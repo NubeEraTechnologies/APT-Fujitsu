@@ -148,6 +148,7 @@ Use:
 Edit Maven settings:
 
 ```bash
+mkdir -p ~/.m2
 nano ~/.m2/settings.xml
 ```
 
