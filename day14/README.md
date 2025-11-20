@@ -128,7 +128,7 @@ Nexus UI →
 # **9. Create a Hosted Maven Repository**
 
 Nexus UI →
-**Repositories → Create repository → maven2 (hosted)**
+**Settings → Repository → Repositories → Create repository → maven2 (hosted)**
 
 Use:
 
