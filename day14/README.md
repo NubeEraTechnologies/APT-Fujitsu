@@ -194,7 +194,7 @@ cd nexus-sample
 nano pom.xml
 ```
 
-Replace entire file with:
+Replace entire file with and enter your VM_IP:
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
