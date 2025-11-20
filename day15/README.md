@@ -291,17 +291,3 @@ Include:
 * Log observations
 
 ---
-
-# **11. Take VM Snapshot**
-
-Name it:
-
-```
-day15_nexus_proxy_group_baseline
-```
-
-✔ Ensures a stable starting point for Day 16.
-
----
-
-Just say: **Day 16**
