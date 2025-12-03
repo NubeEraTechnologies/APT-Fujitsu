@@ -96,6 +96,37 @@ tester = r
 mkdir ~/svnworkingcopy
 cd ~/svnworkingcopy
 mkdir trunk branches tags
+sudo nano /svn/repos/projectA/conf/svnserve.conf
+```
+
+Copy and paste this inside:
+
+```
+[general]
+anon-access = none
+auth-access = write
+password-db = passwd
+authz-db = authz
+```
+
+Save: **CTRL + O**, ENTER
+Exit: **CTRL + X**
+
+---
+
+# After editing, restart svnserve
+
+```bash
+sudo pkill svnserve
+sudo svnserve -d -r /svn/repos
+```
+
+---
+
+# Clear cached credentials
+
+```bash
+rm -rf ~/.subversion/auth
 ```
 
 ### Import into repository
