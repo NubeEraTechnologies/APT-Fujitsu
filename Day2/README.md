@@ -1,246 +1,237 @@
-
-# 📘 **DAY 2 – SVN Administration (Ubuntu) – README.md**
-
-## **Overview**
-
-Day 2 focuses on installing and configuring **SVN (Subversion)** on **Ubuntu**, creating your first repository, configuring users and permissions, performing basic operations (checkout, add, commit), and setting up the standard repository layout with branching and merging.
+# 🚀 **FULL STEP-BY-STEP GUIDE (Ubuntu VM)**
 
 ---
 
-# 🧰 **Prerequisites**
-
-* Ubuntu 20.04 / 22.04 (fresh or existing)
-* Sudo-enabled user
-* Internet connection
-
----
-
-# 🚀 **1. Install SVN on Ubuntu**
+# **STEP 1 — Install Docker & Docker Compose**
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y subversion
-svn --version
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
 ```
 
----
-
-# 📁 **2. Create SVN Repository Directory**
+Add Docker GPG key:
 
 ```bash
-sudo mkdir -p /svn/repos
-sudo svnadmin create /svn/repos/projectA
-sudo chmod -R 755 /svn/repos
+sudo mkdir -m 0755 -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
-Repository structure will contain:
-
-```
-conf/ db/ hooks/ locks/ README.txt
-```
-
----
-
-# 🔐 **3. Configure Users**
-
-Edit the passwd file:
+Add Docker repo:
 
 ```bash
-sudo nano /svn/repos/projectA/conf/passwd
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-Add:
-
-```
-[users]
-admin = admin123
-developer1 = dev123
-developer2 = dev456
-```
-
----
-
-# 🔏 **4. Configure Permissions (authz)**
+Install Docker:
 
 ```bash
-sudo nano /svn/repos/projectA/conf/authz
-```
-
-Use:
-
-```
-[groups]
-devs = developer1, developer2
-
-[/]
-admin = rw
-@devs = rw
-* = r
-```
-
----
-
-# ⚙️ **5. Configure svnserve.conf**
-
-```bash
-sudo nano /svn/repos/projectA/conf/svnserve.conf
-```
-
-Uncomment/add:
-
-```
-[general]
-anon-access = none
-auth-access = write
-password-db = passwd
-authz-db = authz
-realm = ProjectA Repository
-```
-
----
-
-# ▶️ **6. Start SVN Server**
-
-```bash
-sudo svnserve -d -r /svn/repos
-```
-
-Check:
-
-```bash
-ps aux | grep svnserve
-```
-
----
-
-# 📥 **7. Checkout Repository**
-
-```bash
-mkdir ~/svnworkingcopy
-cd ~/svnworkingcopy
-svn checkout svn://localhost/projectA --username admin
-```
-
-Enter password: `admin123`
-When asked to save unencrypted password → **yes**.
-
----
-
-# 📄 **8. Add Your First File**
-
-```bash
-cd ~/svnworkingcopy/projectA
-echo "Welcome to SVN Project A" > readme.txt
-svn add readme.txt
-svn commit -m "Initial commit: added readme file"
-```
-
-Verify from server:
-
-```bash
-svn ls svn://localhost/projectA
-```
-
----
-
-# 🏗 **9. Create Standard SVN Layout**
-
-Inside working copy:
-
-```bash
-cd ~/svnworkingcopy/projectA
-mkdir trunk branches tags
-mv readme.txt trunk/
-svn add trunk branches tags
-svn commit -m "Added standard project structure"
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
 ```
 
 Verify:
 
 ```bash
-svn ls svn://localhost/projectA
-svn ls svn://localhost/projectA/trunk
+docker --version
+docker run hello-world
+```
+
+Install Docker Compose:
+
+```bash
+sudo apt install -y docker-compose
 ```
 
 ---
 
-# 🌿 **10. Create a Branch**
+# **STEP 2 — Create Project Directory**
 
 ```bash
-svn copy svn://localhost/projectA/trunk \
-         svn://localhost/projectA/branches/feature-readme-update \
-         -m "Created branch: feature-readme-update"
-```
-
-List branches:
-
-```bash
-svn ls svn://localhost/projectA/branches
+mkdir svn-docker
+cd svn-docker
 ```
 
 ---
 
-# 🔄 **11. Switch to Branch**
+# **STEP 3 — Create Directory Structure**
 
 ```bash
-cd ~/projectA-trunk
-svn switch svn://localhost/projectA/branches/feature-readme-update
+mkdir server client
+touch docker-compose.yml server/Dockerfile client/Dockerfile
 ```
 
 ---
 
-# ✏️ **12. Modify File in Branch**
+# **STEP 4 — Create SVN Server Dockerfile**
 
-```bash
-echo "This line was added in the feature-readme-update branch." >> readme.txt
-svn status
-svn commit -m "Updated readme in branch"
+`server/Dockerfile`:
+
+```dockerfile
+FROM ubuntu:22.04
+
+RUN apt update && apt install -y subversion apache2 libapache2-mod-svn && \
+    a2enmod dav && a2enmod dav_svn
+
+# Create repository
+RUN mkdir -p /var/svn/repos && \
+    svnadmin create /var/svn/repos/myrepo && \
+    chown -R www-data:www-data /var/svn/repos
+
+# Apache config
+RUN echo '<Location /svn>' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   DAV svn' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   SVNParentPath /var/svn/repos' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   AuthType Basic' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   AuthName "SVN Repo"' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   AuthUserFile /etc/svn-auth-users' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '   Require valid-user' >> /etc/apache2/mods-enabled/dav_svn.conf && \
+    echo '</Location>' >> /etc/apache2/mods-enabled/dav_svn.conf
+
+# Create login user
+RUN htpasswd -bc /etc/svn-auth-users user1 pass123
+
+EXPOSE 80
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
 ```
 
 ---
 
-# 🔁 **13. Merge Branch → Trunk**
+# **STEP 5 — Create SVN Client Dockerfile**
 
-Switch back:
+`client/Dockerfile`:
 
-```bash
-svn switch svn://localhost/projectA/trunk
-```
+```dockerfile
+FROM ubuntu:22.04
 
-Merge changes:
+RUN apt update && apt install -y subversion
 
-```bash
-svn merge svn://localhost/projectA/branches/feature-readme-update
-```
-
-Commit merge:
-
-```bash
-svn commit -m "Merged feature-readme-update branch into trunk"
+WORKDIR /workspace
+CMD ["bash"]
 ```
 
 ---
 
-# ✔️ **14. Verify Final Result**
+# **STEP 6 — Create docker-compose.yml**
 
-```bash
-svn cat svn://localhost/projectA/trunk/readme.txt
+`docker-compose.yml`:
+
+```yaml
+version: "3.8"
+
+services:
+  svn-server:
+    build: ./server
+    container_name: svn-server
+    ports:
+      - "8080:80"
+    networks:
+      - svn-net
+
+  svn-client:
+    build: ./client
+    container_name: svn-client
+    networks:
+      - svn-net
+    tty: true
+    stdin_open: true
+
+networks:
+  svn-net:
 ```
-
-You should see the updated lines from the branch.
 
 ---
 
-# 🎉 **Day 2 Completed**
+# **STEP 7 — Build & Start Containers**
 
-You have successfully learned:
+Run:
 
-* SVN installation
-* Repository creation
-* User authentication
-* Permissions
-* Checkout, add, commit
-* Standard SVN structure
-* Branching & merging
+```bash
+docker-compose up --build -d
+```
+
+Check containers:
+
+```bash
+docker ps
+```
+
+You should see:
+
+* `svn-server` (running)
+* `svn-client` (running)
+
+---
+
+# **STEP 8 — Verify SVN Server in Browser**
+
+Open this URL in your browser:
+
+```
+http://<YOUR_VM_IP>:8080/svn/myrepo
+```
+
+Login:
+
+* **user1**
+* **pass123**
+
+---
+
+# **STEP 9 — Use SVN Client Container**
+
+Enter the client container:
+
+```bash
+docker exec -it svn-client bash
+```
+
+---
+
+# **STEP 10 — Checkout Repository**
+
+Inside client:
+
+```bash
+svn checkout http://svn-server/svn/myrepo --username user1 --password pass123
+```
+
+You will see:
+
+```
+Checked out revision 0.
+```
+
+---
+
+# **STEP 11 — Add a File and Commit**
+
+Inside client:
+
+```bash
+cd myrepo
+echo "Hello SVN from Docker" > readme.txt
+svn add readme.txt
+svn commit -m "Initial commit" --username user1 --password pass123
+```
+
+You should now see:
+
+```
+Committed revision 1.
+```
+
+---
+
+# 🎉 **SETUP COMPLETE**
+
+You now have:
+
+✔ SVN Server running in Docker
+✔ SVN Client container
+✔ Working repository
+✔ Successful commit
 
 ---
