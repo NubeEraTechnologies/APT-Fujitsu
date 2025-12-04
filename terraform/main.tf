@@ -11,7 +11,6 @@ resource "azurerm_resource_group" "rg" {
   name     = "${var.prefix}-rg"
   location = var.location
 }
-
 resource "azurerm_virtual_network" "vnet" {
   name                = "${var.prefix}-vnet"
   location            = azurerm_resource_group.rg.location
@@ -26,14 +25,15 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+# 🔥 FIXED: Basic PIP quota = 0 → use Standard + Static (works everywhere)
 resource "azurerm_public_ip" "public_ip" {
   name                = "${var.prefix}-pip"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
-}
 
+  sku                 = "Standard"   # REQUIRED for most subscriptions
+  allocation_method   = "Static"     # REQUIRED for Standard SKU
+}
 
 resource "azurerm_network_interface" "nic" {
   name                = "${var.prefix}-nic"
