@@ -23,11 +23,20 @@ echo "===================================================="
 echo " 🚀 AUTOMATED SVN + DOCKER + DOCKER COMPOSE SETUP"
 echo "===================================================="
 
-###############################################
+
+\###############################################
 # STEP 0 — FIX DOCKER PERMISSIONS PROACTIVELY
 ###############################################
 
 echo "🔧 Checking Docker group permissions..."
+
+# Create docker group if missing
+if ! getent group docker >/dev/null; then
+    echo "🛠️  Creating docker group..."
+    sudo groupadd docker
+fi
+
+# Add user to docker group
 if ! groups $USER | grep -q docker; then
     echo "🛠️  Adding user '$USER' to docker group..."
     sudo usermod -aG docker $USER
