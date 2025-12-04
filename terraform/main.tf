@@ -91,10 +91,20 @@ resource "azurerm_linux_virtual_machine" "vm" {
   }
 }
 
-output "selected_region" { value = var.region }
-output "selected_vm_size" { value = var.vm_size }
-output "public_ip" { value = azurerm_public_ip.public_ip.ip_address }
-output "private_key" { sensitive = true, value = tls_private_key.sshkey.private_key_pem }
+output "selected_region" {
+  value = var.region
+}
 
+output "selected_vm_size" {
+  value = var.vm_size
+}
+
+output "public_ip" {
+  value = azurerm_public_ip.public_ip.ip_address
+}
+
+output "private_key" {
+  value     = tls_private_key.sshkey.private_key_pem
   sensitive = true
 }
+
