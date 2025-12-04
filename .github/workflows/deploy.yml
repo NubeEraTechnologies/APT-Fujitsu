@@ -1,54 +1,62 @@
-name: Deploy Azure VM
+name: terraform-deploy-oidc
 
 on:
-  workflow_dispatch:
-    
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write   # <-- REQUIRED for OIDC token
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        auth-type: interactive
-        tenant-id: ${{ secrets.TENANT_ID }}
-        subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
-        
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2     # or use a specific patch tag if your runner requires it (see notes)
+        with:
+          auth-type: 'ID_TOKEN'            # tells action to use OIDC / token exchange
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify az account
+        run: az account show
+
+      # example: terraform steps or other actions...
+      - name: Terraform init
+        run: |
+          cd terraform
+          terraform init
+
     # - uses: azure/login@v2
     #   with:
     #     auth-type:	'SERVICE_PRINCIPAL'
     #     creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-
-    - name: Terraform Init
-      working-directory: terraform
-      run: terraform init
-
-    - name: Terraform Apply
-      working-directory: terraform
-      run: terraform apply -auto-approve
-
-    - name: Save SSH Private Key
-      run: |
-        echo "${{ steps.tf-outputs.outputs.private_key }}" > ansible/private.pem
-        chmod 600 ansible/private.pem
-
-    - name: Create Ansible Inventory
-      run: |
-        echo "[azure_vm]" > ansible/inventory
-        echo "${{ steps.tf-outputs.outputs.public_ip }}" >> ansible/inventory
-
-    - name: Install Ansible
-      run: sudo apt-get update && sudo apt-get install -y ansible
-
-    - name: Run Ansible
-      run: |
-        ansible-playbook -i ansible/inventory ansible/install-packages.yml \
-          --private-key ansible/private.pem \
-          -u azureuser
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+  
+      - name: Save SSH Private Key
+        run: |
+          echo "${{ steps.tf-outputs.outputs.private_key }}" > ansible/private.pem
+          chmod 600 ansible/private.pem
+  
+      - name: Create Ansible Inventory
+        run: |
+          echo "[azure_vm]" > ansible/inventory
+          echo "${{ steps.tf-outputs.outputs.public_ip }}" >> ansible/inventory
+  
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+  
+      - name: Run Ansible
+        run: |
+          ansible-playbook -i ansible/inventory ansible/install-packages.yml \
+            --private-key ansible/private.pem \
+            -u azureuser
