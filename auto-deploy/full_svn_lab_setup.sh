@@ -2,8 +2,8 @@
 set -e
 
 echo "======================================================"
-echo "   FULL SVN LAB SETUP (Day 2 + Day 3) - AUTOMATION"
-echo "   Runs Entirely From HOST Machine (Ubuntu)"
+echo " FULL SVN LAB SETUP (Day 2 + Day 3) - AUTOMATED"
+echo " Runs Entirely From HOST Machine (Ubuntu)"
 echo "======================================================"
 
 ################################################################################
@@ -36,10 +36,10 @@ else
 fi
 
 ################################################################################
-# STEP 2: REMOVE OLD LAB ENVIRONMENT (SO SCRIPT IS ALWAYS REUSABLE)
+# STEP 2: REMOVE OLD LAB ENVIRONMENT (ALWAYS PRODUCE CLEAN SETUP)
 ################################################################################
 
-echo "[INFO] Removing previous svn-docker environment (if any)..."
+echo "[INFO] Removing old svn-docker environment if exists..."
 rm -rf ~/svn-docker
 
 ################################################################################
@@ -121,21 +121,25 @@ networks:
 EOF
 
 ################################################################################
-# STEP 7: START DOCKER ENVIRONMENT
+# STEP 7: BUILD AND START DOCKER ENVIRONMENT
 ################################################################################
 
 docker compose up -d --build
 sleep 5
 
-echo "[SUCCESS] SVN Docker environment is running."
+echo "[SUCCESS] Docker containers are running."
 docker ps --filter "name=svn-server" --filter "name=svn-client"
 
 ################################################################################
-# STEP 8: DAY 2 – CHECKOUT REPO & INITIAL COMMIT
+# STEP 8: DAY 2 – CHECKOUT REPO, CREATE STRUCTURE, INITIAL COMMIT
 ################################################################################
 
 docker exec -i svn-client bash << 'EOF'
 cd /workspace
+
+# If repo exists, remove it
+rm -rf myrepo
+
 svn checkout http://svn-server/svn/myrepo --username user1 --password pass123
 cd myrepo
 
@@ -143,7 +147,6 @@ echo "Welcome to SVN Docker Lab" > readme.txt
 svn add readme.txt
 svn commit -m "Initial commit: added readme.txt" --username user1 --password pass123
 
-# Standard SVN layout
 mkdir trunk branches tags
 mv readme.txt trunk/
 
@@ -157,7 +160,7 @@ echo "[SUCCESS] DAY 2 setup completed."
 # STEP 9: DAY 3 – INSTALL HOOKS INSIDE SERVER
 ################################################################################
 
-# PRE-COMMIT
+### PRE-COMMIT HOOK
 docker exec -i svn-server bash << 'EOF'
 cd /var/svn/repos/myrepo/hooks
 
@@ -177,7 +180,7 @@ HOOK
 chmod +x pre-commit
 EOF
 
-# POST-COMMIT
+### POST-COMMIT HOOK (UPDATED / FIXED)
 docker exec -i svn-server bash << 'EOF'
 cd /var/svn/repos/myrepo/hooks
 
@@ -186,9 +189,11 @@ cat > post-commit << 'HOOK'
 REPOS="$1"
 REV="$2"
 
-/usr/bin/svnlook author $REPOS -r $REV >> /var/log/svn-commit.log
-/usr/bin/svnlook changed $REPOS -r $REV >> /var/log/svn-commit.log
-echo "------" >> /var/log/svn-commit.log
+/usr/bin/svnlook author "$REPOS" -r "$REV" >> "$REPOS/svn-commit.log"
+/usr/bin/svnlook changed "$REPOS" -r "$REV" >> "$REPOS/svn-commit.log"
+echo "------" >> "$REPOS/svn-commit.log"
+
+exit 0
 HOOK
 
 chmod +x post-commit
@@ -197,7 +202,7 @@ EOF
 echo "[SUCCESS] Hooks installed."
 
 ################################################################################
-# STEP 10: TEST HOOKS + CREATE BACKUP
+# STEP 10: DAY 3 – TEST HOOKS + BACKUP
 ################################################################################
 
 docker exec -i svn-client bash << 'EOF'
@@ -208,14 +213,14 @@ svn add hooktest.txt
 svn commit -m "Valid commit for hook test" --username user1 --password pass123
 EOF
 
-# BACKUP
+### BACKUP REPOSITORY
 docker exec -i svn-server bash << 'EOF'
 svnadmin dump /var/svn/repos/myrepo > /var/svn/repos/myrepo_backup.dump
 EOF
 
 docker cp svn-server:/var/svn/repos/myrepo_backup.dump ~/myrepo_backup.dump
 
-echo "[SUCCESS] Day 3 Backup created at ~/myrepo_backup.dump"
+echo "[SUCCESS] Backup created at ~/myrepo_backup.dump"
 
 ################################################################################
 echo "======================================================"
