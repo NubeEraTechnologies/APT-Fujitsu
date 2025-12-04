@@ -2,8 +2,17 @@ provider "azurerm" {
   features {}
   subscription_id = "bd65aea3-75fe-4024-8c52-185c16367c34"
 }
+
 terraform {
   required_version = ">= 1.4.0"
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.80.0"
+    }
+  }
+}
 
 variable "prefix" {
   default = "devvm"
