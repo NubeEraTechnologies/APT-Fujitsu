@@ -75,6 +75,12 @@ resource "azurerm_linux_virtual_machine" "vm" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
+  # 🔥 REQUIRED BLOCK (missing before — caused your error)
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
 }
 
 # Output for Ansible
