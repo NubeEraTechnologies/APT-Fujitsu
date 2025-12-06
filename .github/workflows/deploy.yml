@@ -20,7 +20,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-
       - name: Verify az account
         run: az account show
         
@@ -31,7 +30,6 @@ jobs:
         run: |
           cd terraform
           terraform init
-
 
       - name: Terraform Apply
         working-directory: terraform
