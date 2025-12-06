@@ -18,7 +18,7 @@ variable "prefix" {
 }
 
 variable "region" {
-  default = "eastus2"
+  default = "westus3"
 }
 
 variable "vm_size" {
